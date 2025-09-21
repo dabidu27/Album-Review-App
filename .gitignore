@@ -153,3 +153,5 @@ Thumbs.db
 .env
 config.py
 secrets.py
+
+test_rating.py
