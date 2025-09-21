@@ -7,11 +7,11 @@ from spotify import get_spotify_token, search_for_artist_albums, search_for_albu
 from flask_cors import CORS
 import sqlite3
 from datetime import datetime, timedelta
-
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 CORS(app)
-app.secret_key = "supersecretkey"
+app.secret_key = os.getenv('SECRET_KEY')
 review_manager = ReviewManager()
 user_manager = UserManager()
 
