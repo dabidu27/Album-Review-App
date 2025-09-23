@@ -121,7 +121,7 @@ class UserManager:
     #FOLLOWERS FUNCTIONS
     def follow_user(self, follower_id, followed_id):
 
-        if followed_id == followed_id:
+        if follower_id == followed_id:
             return False, 'You cannot follow yourself'
 
         with self.connect() as conn:
@@ -129,7 +129,7 @@ class UserManager:
             cursor = conn.cursor()
             try:
 
-                cursor.execute('INSERT INTO followers (follower_id, follower_id) VALUES (?, ?)', (follower_id, followed_id))
+                cursor.execute('INSERT INTO followers (follower_id, followed_id) VALUES (?, ?)', (follower_id, followed_id))
                 conn.commit()
                 return True, 'User followed successfully'
             

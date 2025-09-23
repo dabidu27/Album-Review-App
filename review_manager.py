@@ -33,23 +33,39 @@ class ReviewManager:
             conn.commit()
     
     def add_review(self, user_id, album_id, rating, review):
-
         with self.connect() as conn:
-
             cursor = conn.cursor()
 
-            cursor.execute('SELECT * FROM reviews WHERE user_id = ? AND album_id = ?', (int(user_id), album_id))
+            cursor.execute(
+                'SELECT * FROM reviews WHERE user_id = ? AND album_id = ?',
+                (int(user_id), album_id)
+            )
             row = cursor.fetchone()
 
             if row:
-                    cursor.execute('UPDATE reviews SET rating = ?, review = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND album_id = ?', (rating, review, user_id, album_id))
-
+                
+                cursor.execute(
+                    '''
+                    UPDATE reviews
+                    SET rating = ?, review = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = ? AND album_id = ?
+                    ''',
+                    (rating, review, user_id, album_id)
+                )
             else:
-                cursor.execute('INSERT INTO reviews (user_id, album_id, rating, review) VALUES (?, ?, ?, ?)', (user_id, album_id, rating, review))
+                
+                cursor.execute(
+                    '''
+                    INSERT INTO reviews (user_id, album_id, rating, review, created_at)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ''',
+                    (user_id, album_id, rating, review)
+                )
 
             conn.commit()
-        
+
         return True, 'Review added successfully'
+
     
     def delete_review(self, user_id, album_id):
 
@@ -88,7 +104,7 @@ class ReviewManager:
 
             cursor = conn.cursor()
 
-            cursor.execute('SELECT follower_id FROM followers WHERE follwed_id = ?', (user_id, ))
+            cursor.execute('SELECT followed_id FROM followers WHERE follower_id = ?', (user_id, ))
             friends = cursor.fetchall()
             friends = [id[0] for id in friends]
 
@@ -96,9 +112,10 @@ class ReviewManager:
 
                 cursor.execute(
                     '''
-                    SELECT a.album_name, a.artist_name, a.cover, r.rating, r.review FROM reviews r JOIN albums a ON r.album_id = a.album_id WHERE user_id = ? AND (created_at >= datetime('now', '-7 days') OR updated_at >= datetime('now', '-7 days'))
+                    SELECT a.album_name, a.artist_name, a.cover, r.rating, r.review FROM reviews r JOIN albums a ON r.album_id = a.album_id WHERE r.user_id = ?
+                    AND COALESCE(r.updated_at, r.created_at) >= datetime('now', '-7 days')
                     ORDER BY COALESCE(updated_at, created_at) DESC
                     ''', (friend_id, ))
-                recent_activity.append(cursor.fetchall())
+                recent_activity.extend(cursor.fetchall())
         
         return recent_activity

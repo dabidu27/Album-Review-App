@@ -139,7 +139,7 @@ def search_album(album_name):
             release_date = album['release_date']
             cover = album['images'][0]['url']
             cursor.execute('''
-                           INSERT INTO albums (album_id, album_name, artist_name, artist_id, release_date, cover) VALUES (?, ?, ?, ?, ?, ?)
+                           INSERT OR IGNORE INTO albums (album_id, album_name, artist_name, artist_id, release_date, cover) VALUES (?, ?, ?, ?, ?, ?)
                            ''',(album_id, album_name, artist_name, artist_id, release_date, cover))
             conn.commit()
         
@@ -221,13 +221,18 @@ def get_user_favorites():
     return jsonify({'favorites': favorites_list}), 200
 
 #FOLLOWERS FUNCTIONS
-@app.route('/user/<followed_id>/follow', methods = ['POST'])
-def follow(followed_id):
+@app.route('/user/<followed_username>/follow', methods = ['POST'])
+def follow(followed_username):
 
     follower_id = session.get('user_id')
 
     if not follower_id:
         return jsonify({'error': 'User has to be logged in'}), 401
+    
+    with sqlite3.connect('musicboxd.db') as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT id FROM users WHERE username = ?', (followed_username, ))
+        followed_id = cursor.fetchone()[0]
     
     success, message = user_manager.follow_user(follower_id, followed_id)
 
@@ -335,6 +340,18 @@ def get_own_profile():
 
         return jsonify(user_data)
 
+@app.route('/user/friends_activity')
+def friends_activity():
+
+    user_id = session.get('user_id')
+    recent_activity = review_manager.friends_recent_activity(user_id)
+
+    recent_activity_list = []
+
+    for activity in recent_activity:
+        recent_activity_list.append({'album_name': activity[0], 'artist_name': activity[1], 'cover': activity[2], 'rating': activity[3], 'review': activity[4]})
+
+    return jsonify({'recent_activity': recent_activity_list})
 
 @app.route('/user/update_bio', methods = ['POST'])
 def update_bio():
