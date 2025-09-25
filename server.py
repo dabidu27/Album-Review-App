@@ -71,7 +71,7 @@ def login():
     if success:
         session['user_id'] = user_id
 
-    return jsonify({'message': message}), status_code
+    return jsonify({'message': message, 'user_id': user_id}), status_code
 
 @app.route('/logout', methods = ['POST'])
 
