@@ -20,12 +20,13 @@ def login():
             return
         
         response = requests.post(f'{backend_url}/login', json = {'username': username, 'password': password})
-
+        user_id = response.json()['user_id']
         if response.status_code == 200:
 
             st.success('Login successfull!')
             st.session_state['logged_in'] = True
             st.session_state['username'] = username
+            st.session_state['user_id'] = user_id
             st.rerun()
         else:
             st.error(response.json().get('message'))
@@ -66,45 +67,68 @@ def register():
         st.rerun()
 
 
-
 def search_album_page():
     st.title('Search for an Album')
     search_mode = st.radio('Search by', ['Album', 'Artist'])
+
+    if 'last_search_mode' not in st.session_state:
+        st.session_state['last_search_mode'] = search_mode
+    if st.session_state['last_search_mode'] != search_mode:
+        st.session_state['album_search_results'] = []
+        st.session_state['last_search_mode'] = search_mode
+
     if search_mode == 'Album':
         album_name = st.text_input('Enter album name')
-        if st.button('Search'):
+        search_album_button = st.button('Search', key = 'album_search_btn')
 
-            if not album_name:
-                st.warning('Please enter album name')
-                return
+        if search_album_button and album_name:
             
             response = requests.get(f'{backend_url}/search/album/{album_name}')
             if response.status_code == 200 and response.json():
-
-                albums = response.json()
-                cols = st.columns(5)
-                for album in albums:
-                    with cols[idx % 5]:
-                        st.image(album['cover'], width=200)
-                        st.write(f"**{album['album_name']}** by {album['artist_name']}")
-                        st.write(f'Release date: {album['release_date']}')
+                
+                st.session_state['album_search_results'] = response.json()
             else:
-                st.warning('No album found')
+                st.session_state['album_search_results'] = []
+                st.warning('No albums found')
+
+        albums = st.session_state['album_search_results']
+        if albums:
+            cols = st.columns(5)
+            for idx, album in enumerate(albums):
+                with cols[idx % 5]:
+                    st.image(album['cover'], width=200)
+                    st.write(f"**{album['album_name']}** by {album['artist_name']}")
+                    st.write(f'Release date: {album['release_date']}')
+                    fav_key = f"fav_album_{album['album_id']}_{idx}"
+                    if st.button('Add to favorites', key=fav_key):
+
+                        user_id = st.session_state['user_id']
+                        if not user_id:
+                            st.warning('You must be logged in to add album to favorites')
+                        else:
+                            fav_response = requests.post(f"{backend_url}/album/{album['album_id']}/add_favorite", json = {'user_id': user_id})
+
+                            if fav_response.status_code == 200:
+                                st.success('Added to favorites')
+                            else:
+                                 st.error(fav_response.json().get('message'))
+        else:
+            st.warning('No albums found')
     else:
+
         artist_name = st.text_input('Enter artist name')
-
-        if st.button('Search'):
-
-            if not artist_name:
-                st.warning('Please enter artist name')
-                return
+        search_album_button = st.button('Search', key = 'album_search_btn')
+        if search_album_button and artist_name:
             
             response = requests.get(f'{backend_url}/search/artist/{artist_name}')
-
             if response.status_code == 200 and response.json():
-
-                albums = response.json()
-
+                
+                st.session_state['album_search_results'] = response.json()
+            else:
+                st.session_state['album_search_results'] = []
+                st.warning('No albums found')
+        albums = st.session_state['album_search_results']
+        if albums:
                 cols = st.columns(5)
                 for idx, album in enumerate(albums):
                     
@@ -112,14 +136,33 @@ def search_album_page():
                         st.image(album['cover'], width=200)
                         st.write(f"**{album['album_name']}** by {album['artist_name']}")
                         st.write(f"Release date: {album['release_date']}")
-            else:
-                st.warning('No albums found')
+                        fav_key = f"fav_album_{album['album_id']}_{idx}"
+                        if st.button('Add to favorites', key=fav_key):
+
+                            user_id = st.session_state['user_id']
+                            if not user_id:
+                                st.warning('You must be logged in to add album to favorites')
+                            else:
+                                fav_response = requests.post(f"{backend_url}/album/{album['album_id']}/add_favorite", json = {'user_id': user_id})
+
+                                if fav_response.status_code == 200:
+                                    st.success('Added to favorites')
+                                else:
+                                    st.error(fav_response.json().get('message'))
+        else:
+            st.warning('No albums found')
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
 if 'show_register' not in st.session_state:
     st.session_state['show_register'] = False
+
+if 'user_id' not in st.session_state:
+    st.session_state['user_id'] = 0
+
+if 'album_search_results' not in st.session_state:
+    st.session_state['album_search_results'] = []
 
 
 if not st.session_state['logged_in']:

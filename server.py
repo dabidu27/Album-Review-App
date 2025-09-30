@@ -194,7 +194,8 @@ def delete_rate(album_id):
 @app.route('/album/<album_id>/add_favorite', methods = ['POST'])
 def add_to_favorites(album_id):
 
-    user_id = session.get('user_id')
+    data = request.json
+    user_id = data.get('user_id')
 
     if not user_id:
 
