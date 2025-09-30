@@ -115,7 +115,7 @@ def search_artists_albums(artist_name):
                 cursor.execute('INSERT OR IGNORE INTO albums VALUES(?, ?, ?, ?, ?, ?)', (album_data['album_id'], album_data['album_name'], album_data['artist_name'], album_data['artist_id'], album_data['release_date'], album_data['cover'])) 
                 albums_list.append(album_data)
         conn.commit()
-    return jsonify({'albums': albums_list})
+    return jsonify(albums_list)
 
 @app.route('/search/album/<album_name>', methods = ['GET'])
 

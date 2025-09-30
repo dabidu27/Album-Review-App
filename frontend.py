@@ -69,30 +69,58 @@ def register():
 
 def search_album_page():
     st.title('Search for an Album')
-    album_name = st.text_input('Enter album name')
-    if st.button('Search'):
+    search_mode = st.radio('Search by', ['Album', 'Artist'])
+    if search_mode == 'Album':
+        album_name = st.text_input('Enter album name')
+        if st.button('Search'):
 
-        if not album_name:
-            st.warning('Please enter album name')
-            return
-        
-        response = requests.get(f'{backend_url}/search/album/{album_name}')
-        if response.status_code == 200 and response.json():
+            if not album_name:
+                st.warning('Please enter album name')
+                return
+            
+            response = requests.get(f'{backend_url}/search/album/{album_name}')
+            if response.status_code == 200 and response.json():
 
-            albums = response.json()
-            for album in albums:
+                albums = response.json()
+                cols = st.columns(5)
+                for album in albums:
+                    with cols[idx % 5]:
+                        st.image(album['cover'], width=200)
+                        st.write(f"**{album['album_name']}** by {album['artist_name']}")
+                        st.write(f'Release date: {album['release_date']}')
+            else:
+                st.warning('No album found')
+    else:
+        artist_name = st.text_input('Enter artist name')
 
-                st.image(album['cover'], width=200)
-                st.write(f"**{album['album_name']}** by {album['artist_name']}")
-                st.write(f'Release date: {album['release_date']}')
-        else:
-            st.warning('No album found')
+        if st.button('Search'):
+
+            if not artist_name:
+                st.warning('Please enter artist name')
+                return
+            
+            response = requests.get(f'{backend_url}/search/artist/{artist_name}')
+
+            if response.status_code == 200 and response.json():
+
+                albums = response.json()
+
+                cols = st.columns(5)
+                for idx, album in enumerate(albums):
+                    
+                    with cols[idx % 5]:
+                        st.image(album['cover'], width=200)
+                        st.write(f"**{album['album_name']}** by {album['artist_name']}")
+                        st.write(f"Release date: {album['release_date']}")
+            else:
+                st.warning('No albums found')
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
 if 'show_register' not in st.session_state:
     st.session_state['show_register'] = False
+
 
 if not st.session_state['logged_in']:
 
