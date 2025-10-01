@@ -103,7 +103,11 @@ class UserManager:
                 return False, 'You can have only 3 favorites'
 
             else:
-
+                cursor.execute('SELECT album_id FROM favorites WHERE user_id = ?', (int(user_id),))
+                albums = cursor.fetchall()
+                for album in albums:
+                    if album_id == album[0]:
+                        return False, 'Already added to favorites'
                 cursor.execute('INSERT INTO favorites (user_id, album_id) VALUES (?, ?)', (user_id, album_id))
                 conn.commit()
                 return True, 'Album added to favorites'

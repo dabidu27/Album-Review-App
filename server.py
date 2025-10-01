@@ -167,7 +167,7 @@ def rate_album(album_id):
 
     rating = data.get('rating')
     review = data.get('review', '')
-    user_id = session.get('user_id')
+    user_id = data.get('user_id')
 
     if rating is None or user_id is None:
         return jsonify({'error': 'Rating and user_id are required'}), 400
